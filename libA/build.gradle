@@ -33,12 +33,7 @@ android {
 }
 
 dependencies {
-
-    implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'com.google.android.material:material:1.8.0'
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 }
 
 // Because the components are created only during the afterEvaluate phase, you must
@@ -55,7 +50,7 @@ afterEvaluate {
                 url = "$buildDir/repo"
             }
             maven {
-                name "sonartype-Staging"
+                name "sonatypeStaging"
                 // change to point to your repo, e.g. http://my.org/repo
                 url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
                 credentials {
@@ -65,7 +60,7 @@ afterEvaluate {
             }
             // 定义snapshot仓库
             maven {
-                name "sonatype-Snapshots"
+                name "sonatypeSnapshots"
                 // change to point to your repo, e.g. http://my.org/repo
                 url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                 credentials {
@@ -105,6 +100,18 @@ afterEvaluate {
                         connection = 'https://github.com/ZeroTale/MavenTest'
                         developerConnection = 'https://github.com/ZeroTale/MavenTest.git'
                         url = 'https://github.com/ZeroTale/MavenTest'
+                    }
+                    // A slightly hacky fix so that your POM will include any transitive dependencies
+                    // that your library builds upon
+                    withXml {
+                        def dependenciesNode = asNode().appendNode('dependencies')
+
+                        project.configurations.implementation.allDependencies.each {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                        }
                     }
                 }
             }
